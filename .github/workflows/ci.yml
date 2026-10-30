@@ -2,11 +2,51 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
-  judge:
+  detect:
     runs-on: ubuntu-latest
+    outputs:
+      users: ${{ steps.detect.outputs.users }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        name: Detect answer users
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="HEAD^"
+          fi
+
+          CHANGED=""
+          if git rev-parse "$BASE" >/dev/null 2>&1; then
+            CHANGED=$(git diff --name-only "$BASE"...HEAD -- answers \
+              | grep -E '^answers/[^/]+/' \
+              | cut -d/ -f2 | sort -u)
+          fi
+
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(find answers -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+              | grep -vE '^(target|\.)' | sort)
+          fi
+
+          USERS=$(printf '%s\n' "$CHANGED" | sed '/^$/d; s/^/"/; s/$/"/' | paste -sd, -)
+          echo "users=[$USERS]" >> "$GITHUB_OUTPUT"
+          echo "Detected users: [$USERS]"
+
+  judge:
+    needs: detect
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        user: ${{ fromJson(needs.detect.outputs.users) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -14,5 +54,5 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Judge answers
-        run: mvn -B -Danswer.user=alice verify
+      - name: Judge answers of ${{ matrix.user }}
+        run: mvn -B "-Danswer.user=${{ matrix.user }}" verify

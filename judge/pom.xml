@@ -40,6 +40,7 @@
                     <systemPropertyVariables>
                         <answer.user>${answer.user}</answer.user>
                         <answer.classes.dir>${project.basedir}/../answers/target/classes</answer.classes.dir>
+                        <answers.root>${project.basedir}/../answers</answers.root>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
