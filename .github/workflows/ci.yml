@@ -2,11 +2,106 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  judge:
+  scope:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restrict pull request changes
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          ACTOR: ${{ github.actor }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          ACTOR_LC=$(printf '%s' "$ACTOR" | tr '[:upper:]' '[:lower:]')
+          OWNER_LC=$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')
+          if [ "$ACTOR_LC" = "$OWNER_LC" ]; then
+            echo "仓库所有者，跳过范围检查"
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only "origin/$BASE_REF"...HEAD)
+          if [ -z "$CHANGED" ]; then
+            echo "::error::PR 没有任何文件变更"
+            exit 1
+          fi
+
+          BAD=$(printf '%s\n' "$CHANGED" | grep -vE '^answers/[^/]+/' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::只允许修改 answers/<用户名>/ 下的答案，以下文件不允许修改:"
+            printf '%s\n' "$BAD"
+            exit 1
+          fi
+
+          USERS=$(printf '%s\n' "$CHANGED" | cut -d/ -f2 | sed '/^$/d' | sort -u)
+          COUNT=$(printf '%s\n' "$USERS" | wc -l | tr -d ' ')
+          if [ "$COUNT" -ne 1 ]; then
+            echo "::error::一个 PR 只能提交一个用户目录，当前: $(printf '%s' "$USERS" | tr '\n' ' ')"
+            exit 1
+          fi
+
+          USER=$(printf '%s\n' "$USERS" | head -n1)
+          if [ "$USER" = "alice" ]; then
+            echo "::error::answers/alice 是示例答案，受保护，不允许修改"
+            exit 1
+          fi
+          if ! printf '%s' "$USER" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*$'; then
+            echo "::error::用户名 $USER 不是合法的 Java 包名（仅限字母/数字/下划线，不能以数字开头）"
+            exit 1
+          fi
+
+          echo "范围检查通过，用户: $USER"
+
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      users: ${{ steps.detect.outputs.users }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        name: Detect answer users
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="HEAD^"
+          fi
+
+          CHANGED=""
+          if git rev-parse "$BASE" >/dev/null 2>&1; then
+            CHANGED=$(git diff --name-only "$BASE"...HEAD -- answers \
+              | grep -E '^answers/[^/]+/' \
+              | cut -d/ -f2 | sort -u)
+          fi
+
+          if [ -z "$CHANGED" ]; then
+            CHANGED=$(find answers -mindepth 1 -maxdepth 1 -type d -printf '%f\n' \
+              | grep -vE '^(target|\.)' | sort)
+          fi
+
+          USERS=$(printf '%s\n' "$CHANGED" | sed '/^$/d; s/^/"/; s/$/"/' | paste -sd, -)
+          echo "users=[$USERS]" >> "$GITHUB_OUTPUT"
+          echo "Detected users: [$USERS]"
+
+  judge:
+    needs: detect
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        user: ${{ fromJson(needs.detect.outputs.users) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -14,5 +109,5 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - name: Judge answers
-        run: mvn -B -Danswer.user=alice verify
+      - name: Judge answers of ${{ matrix.user }}
+        run: mvn -B "-Danswer.user=${{ matrix.user }}" verify

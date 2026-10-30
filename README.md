@@ -29,4 +29,22 @@ mvn -Danswer.user=alice verify
 ```
 
 `answer.user` 指定用户名，默认 `alice`；`judge` 会按命名约定加载该用户所有题目的答案。
+**未提交的题目自动跳过**，已提交但包名/类名不匹配则判为失败。
+
+## 提 PR
+
+1. 新建分支，只在自己用户名目录下加答案：
+
+   ```bash
+   git switch -c answer/q02
+   git add answers/<用户名>
+   git commit -m "提交 Q02 答案"
+   git push -u origin answer/q02
+   ```
+
+2. 在 GitHub 上发起 Pull Request 到 `main`。
+3. CI 会从 PR 的变更文件里自动识别 `answers/<用户名>`，只判该用户的答案；
+   没改答案目录时（例如只改文档）则退回为判所有用户。
+4. 非仓库所有者的 PR 只能修改**单个** `answers/<用户名>/` 目录，且不能改 `answers/alice`；
+   动到 `api/`、`judge/`、`.github/` 等任何其他路径都会直接被 CI 拦下。
 
