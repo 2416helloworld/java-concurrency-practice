@@ -39,7 +39,6 @@
                 <configuration>
                     <systemPropertyVariables>
                         <answer.user>${answer.user}</answer.user>
-                        <answer.class>${answer.impl}</answer.class>
                         <answer.classes.dir>${project.basedir}/../answers/target/classes</answer.classes.dir>
                     </systemPropertyVariables>
                 </configuration>

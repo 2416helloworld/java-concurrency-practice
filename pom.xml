@@ -19,11 +19,8 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.10.2</junit.version>
-        <!-- 判题时由 CI 传入：-Danswer.user=alice -Danswer.q=q01-singleton -->
+        <!-- 判题时由 CI 传入：-Danswer.user=alice -->
         <answer.user>alice</answer.user>
-        <answer.q>q01-singleton</answer.q>
-        <!-- 用户答案实现类全限定名 -->
-        <answer.impl>org.practice.answers.${answer.user}.q01.Q01AnswerImpl</answer.impl>
     </properties>
 
     <dependencyManagement>

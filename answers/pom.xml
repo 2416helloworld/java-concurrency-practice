@@ -21,7 +21,38 @@
     </dependencies>
 
     <build>
-        <!-- 只编译当前参与判题的用户答案目录：answers/${answer.user}/${answer.q} -->
-        <sourceDirectory>${project.basedir}/${answer.user}/${answer.q}</sourceDirectory>
+        <plugins>
+            <!-- 每个题目目录都是一个独立源码根：answers/${answer.user}/<题目目录> -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>add-answer-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.basedir}/${answer.user}/q01-singleton</source>
+                                <source>${project.basedir}/${answer.user}/q02-deadlock</source>
+                                <source>${project.basedir}/${answer.user}/q03-readwrite-lock</source>
+                                <source>${project.basedir}/${answer.user}/q04-thread-pool-tuning</source>
+                                <source>${project.basedir}/${answer.user}/q05-scheduler</source>
+                                <source>${project.basedir}/${answer.user}/q06-batch-timeout</source>
+                                <source>${project.basedir}/${answer.user}/q07-semaphore-pool</source>
+                                <source>${project.basedir}/${answer.user}/q08-cyclicbarrier-load</source>
+                                <source>${project.basedir}/${answer.user}/q09-blocking-queue</source>
+                                <source>${project.basedir}/${answer.user}/q10-aba</source>
+                                <source>${project.basedir}/${answer.user}/q11-longadder</source>
+                                <source>${project.basedir}/${answer.user}/q12-aqs-latch</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

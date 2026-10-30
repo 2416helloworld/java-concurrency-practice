@@ -15,4 +15,4 @@ jobs:
           java-version: '17'
           cache: maven
       - name: Judge answers
-        run: mvn -B -Danswer.user=alice -Danswer.q=q01-singleton verify
+        run: mvn -B -Danswer.user=alice verify

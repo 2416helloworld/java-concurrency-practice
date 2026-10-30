@@ -86,12 +86,8 @@ class Q01SingletonTest {
         }
     }
 
-    private static Class<?> loadAnswerClass() throws Exception {
-        String fqcn = System.getProperty("answer.class");
-        if (fqcn == null || fqcn.isBlank()) {
-            fail("缺少系统属性 answer.class");
-        }
-        return AnswerClassLoader.load(fqcn);
+    private static Class<?> loadAnswerClass() {
+        return Answers.load("q01", "Q01AnswerImpl");
     }
 
     private static Method getInstanceMethod(Class<?> type) {
