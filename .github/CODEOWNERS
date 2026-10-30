@@ -1,0 +1,7 @@
+# 关键路径需要仓库所有者审批，防止 PR 篡改判题逻辑
+/api/            @2416helloworld
+/judge/          @2416helloworld
+/.github/        @2416helloworld
+/pom.xml         @2416helloworld
+/answers/pom.xml @2416helloworld
+/questions/      @2416helloworld
